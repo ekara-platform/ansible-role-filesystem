@@ -1,0 +1,5 @@
+---
+# vars file for lagoon.filesytem
+lagoon_fs_dev: xvdf
+lagoon_fs_mount: /data1
+lagoon_fs_dev_format: "{{lagoon_fs_dev}}"

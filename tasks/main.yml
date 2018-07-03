@@ -1,0 +1,27 @@
+---
+# tasks file for lagoon.filesytem
+- name: Check FS name
+  set_fact:
+    lagoon_fs_dev_format: "/dev/{{lagoon_fs_dev}}"
+  when: '"/dev/" not in lagoon_fs_dev'
+- name: Create a ext4 filesystem on "{{lagoon_fs_dev}}"
+  become: yes
+  filesystem:
+    fstype: ext4
+    dev: "{{lagoon_fs_dev_format}}"
+
+- name: Create mount point "{{lagoon_fs_mount}}"
+  become: yes
+  file:
+    path: "{{lagoon_fs_mount}}"
+    state: directory
+    mode: 0777
+
+- name: Mount "{{lagoon_fs_dev_format}}"
+  become: yes
+  mount:
+    path: "{{lagoon_fs_mount}}"
+    src: "{{lagoon_fs_dev_format}}"
+    fstype: ext4
+    opts: defaults,nofail
+    state: mounted
