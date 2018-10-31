@@ -11,8 +11,8 @@ None.
 Role Variables
 --------------
 
-lagoon\_fs\_dev: device to mount
-lagoon\_fs\_mount: filesystem 
+ekara\_fs\_dev: device to mount
+ekara\_fs\_mount: filesystem 
 
 Dependencies
 ------------
@@ -26,7 +26,7 @@ Including an example of how to use your role (for instance, with variables passe
 
     - hosts: servers
       roles:
-         - { role: lagoon.filesystem, lagoon_fs_dev: 'xvdf', lagoon_fs_mount: '/data1' }
+         - { role: ekara.filesystem, ekara_fs_dev: 'xvdf', ekara_fs_mount: '/data1' }
 
 License
 -------
