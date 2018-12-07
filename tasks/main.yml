@@ -11,7 +11,7 @@
 - block:
   - name: Looking for nvme device
     set_fact:
-      ekara_fs_dev_format: "{{item.split(' ')[0]}}" 
+      ekara_fs_dev_format: "{{item.split(' ')[0]}}"
     changed_when: false
     loop: "{{ekara_fs_nvme_list.stdout_lines }}"
     loop_control:
@@ -34,7 +34,7 @@
   filesystem:
     fstype: ext4
     dev: "{{ekara_fs_dev_format}}"
-    opts: -L "EKARA Managed disk for ekara_fs_mount"
+    opts: -L "EKARA {{ekara_fs_mount | replace('/','_')}}"
 - name: Get UUID for partition
   become: true
   command: blkid -s UUID -o value {{ ekara_fs_dev_format }}
