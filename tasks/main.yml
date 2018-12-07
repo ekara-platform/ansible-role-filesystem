@@ -1,9 +1,13 @@
 ---
 # tasks file for ekara.filesytem
+- name: Set temporary variables
+  set_fact:
+    ekara_fs_dev_format: "{{ekara_fs_dev}}"
 - name: Check NVME disks
   become: true
   shell: nvme list
   register: ekara_fs_nvme_list
+  changed_when: false
 - block:
   - name: Looking for nvme device
     set_fact:
@@ -17,22 +21,26 @@
   when:
   - ekara_fs_nvme_list.stdout_lines|length > 1
   - ekara_fs_nvme_list.stdout | regex_search('Amazon Elastic Block Store')
+
 - name: Check FS name
   set_fact:
     ekara_fs_dev_format: "/dev/{{ekara_fs_dev}}"
   when:
-  - ekara_fs_dev_format is not defined
   - '"/dev/" not in ekara_fs_dev'
+  - '"/dev/" not in ekara_fs_dev_format'
+
 - name: Create a ext4 filesystem on "{{ekara_fs_dev_format}}"
   become: true
   filesystem:
     fstype: ext4
     dev: "{{ekara_fs_dev_format}}"
+    opts: -L "EKARA Managed disk for ekara_fs_mount"
 - name: Get UUID for partition
+  become: true
   command: blkid -s UUID -o value {{ ekara_fs_dev_format }}
   register: ekara_fs_tmp_disk_blkid
   changed_when: false
-- debug: var=ekara_fs_tmp_disk_blkid
+
 - name: Create mount point "{{ekara_fs_mount}}"
   become: true
   file:
