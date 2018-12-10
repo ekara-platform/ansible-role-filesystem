@@ -1,14 +1,45 @@
 ---
 # tasks file for ekara.filesytem
+- name: Set temporary variables
+  set_fact:
+    ekara_fs_dev_format: "{{ekara_fs_dev}}"
+- name: Check NVME disks
+  become: true
+  shell: nvme list
+  register: ekara_fs_nvme_list
+  changed_when: false
+- block:
+  - name: Looking for nvme device
+    set_fact:
+      ekara_fs_dev_format: "{{item.split(' ')[0]}}"
+    changed_when: false
+    loop: "{{ekara_fs_nvme_list.stdout_lines }}"
+    loop_control:
+      label: "{{item.split(' ')[0]}}"
+    when:
+    - item | regex_search(ekara_fs_volume| replace('-',''))
+  when:
+  - ekara_fs_nvme_list.stdout_lines|length > 1
+  - ekara_fs_nvme_list.stdout | regex_search('Amazon Elastic Block Store')
+
 - name: Check FS name
   set_fact:
     ekara_fs_dev_format: "/dev/{{ekara_fs_dev}}"
-  when: '"/dev/" not in ekara_fs_dev'
-- name: Create a ext4 filesystem on "{{ekara_fs_dev}}"
+  when:
+  - '"/dev/" not in ekara_fs_dev'
+  - '"/dev/" not in ekara_fs_dev_format'
+
+- name: Create a ext4 filesystem on "{{ekara_fs_dev_format}}"
   become: true
   filesystem:
     fstype: ext4
     dev: "{{ekara_fs_dev_format}}"
+    opts: -L "EKARA {{ekara_fs_mount | replace('/','_')}}"
+- name: Get UUID for partition
+  become: true
+  command: blkid -s UUID -o value {{ ekara_fs_dev_format }}
+  register: ekara_fs_tmp_disk_blkid
+  changed_when: false
 
 - name: Create mount point "{{ekara_fs_mount}}"
   become: true
@@ -16,12 +47,11 @@
     path: "{{ekara_fs_mount}}"
     state: directory
     mode: 0777
-
 - name: Mount "{{ekara_fs_dev_format}}"
   become: true
   mount:
     path: "{{ekara_fs_mount}}"
-    src: "{{ekara_fs_dev_format}}"
     fstype: ext4
     opts: defaults,nofail
     state: mounted
+    src: 'UUID={{ ekara_fs_tmp_disk_blkid.stdout }}'
