@@ -1,57 +1,36 @@
 ---
-# tasks file for ekara.filesytem
-- name: Set temporary variables
+- name: "Normalize block device path"
   set_fact:
-    ekara_fs_dev_format: "{{ekara_fs_dev}}"
-- name: Check NVME disks
-  become: true
-  shell: nvme list
-  register: ekara_fs_nvme_list
-  changed_when: false
-- block:
-  - name: Looking for nvme device
-    set_fact:
-      ekara_fs_dev_format: "{{item.split(' ')[0]}}"
-    changed_when: false
-    loop: "{{ekara_fs_nvme_list.stdout_lines }}"
-    loop_control:
-      label: "{{item.split(' ')[0]}}"
-    when:
-    - item | regex_search(ekara_fs_volume| replace('-',''))
+    ek_block_device: "/dev/{{ ek_block_device }}"
   when:
-  - ekara_fs_nvme_list.stdout_lines|length > 1
-  - ekara_fs_nvme_list.stdout | regex_search('Amazon Elastic Block Store')
+  - '"/dev/" not in ek_block_device'
 
-- name: Check FS name
-  set_fact:
-    ekara_fs_dev_format: "/dev/{{ekara_fs_dev}}"
-  when:
-  - '"/dev/" not in ekara_fs_dev'
-  - '"/dev/" not in ekara_fs_dev_format'
-
-- name: Create a ext4 filesystem on "{{ekara_fs_dev_format}}"
+- name: "Create a {{ ek_fs_type }} filesystem on {{ ek_block_device }}"
   become: true
   filesystem:
-    fstype: ext4
-    dev: "{{ekara_fs_dev_format}}"
-    opts: -L "EKARA {{ekara_fs_mount | replace('/','_')}}"
-- name: Get UUID for partition
+    fstype: "{{ ek_fs_type }}"
+    dev: "{{ ek_block_device }}"
+    opts: -L "ek_{{ ek_mount_path | replace('/','_') }}"
+    force: no
+
+- name: "Get UUID for partition"
   become: true
-  command: blkid -s UUID -o value {{ ekara_fs_dev_format }}
-  register: ekara_fs_tmp_disk_blkid
+  command: blkid -s UUID -o value {{ ek_block_device }}
+  register: ek_part_uuid
   changed_when: false
 
-- name: Create mount point "{{ekara_fs_mount}}"
+- name: "Create mounting point {{ek_mount_path}}"
   become: true
   file:
     path: "{{ekara_fs_mount}}"
     state: directory
     mode: 0777
-- name: Mount "{{ekara_fs_dev_format}}"
+
+- name: "Mount {{ ek_block_device }} on {{ ek_mount_path }}"
   become: true
   mount:
-    path: "{{ekara_fs_mount}}"
-    fstype: ext4
-    opts: defaults,nofail
+    path: "{{ ek_mount_path }}"
+    fstype: "{{ ek_fs_type }}"
+    opts: "{{ ek_mount_opts }}"
     state: mounted
-    src: 'UUID={{ ekara_fs_tmp_disk_blkid.stdout }}'
+    src: 'UUID={{ ek_part_uuid.stdout }}'

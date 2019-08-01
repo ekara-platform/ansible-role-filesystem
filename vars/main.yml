@@ -1,5 +1,3 @@
 ---
-# vars file for ekara.filesytem
-ekara_fs_dev: xvdf
-ekara_fs_mount: /data1
-ekara_fs_dev_format: "{{ekara_fs_dev}}"
+ek_fs_type: ext4
+ek_mount_opts: defaults
