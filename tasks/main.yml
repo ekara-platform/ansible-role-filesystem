@@ -1,36 +1,36 @@
 ---
 - name: "Normalize block device path"
   set_fact:
-    ek_block_device: "/dev/{{ ek_block_device }}"
+    ek_fs_device: "/dev/{{ ek_fs_device }}"
   when:
-  - '"/dev/" not in ek_block_device'
+  - '"/dev/" not in ek_fs_device'
 
-- name: "Create a {{ ek_fs_type }} filesystem on {{ ek_block_device }}"
+- name: "Create a {{ ek_fs_type }} filesystem on {{ ek_fs_device }}"
   become: true
   filesystem:
     fstype: "{{ ek_fs_type }}"
-    dev: "{{ ek_block_device }}"
-    opts: -L "ek_{{ ek_mount_path | replace('/','_') }}"
+    dev: "{{ ek_fs_device }}"
+    opts: -L "ek_{{ ek_fs_mount_path | replace('/','_') }}"
     force: no
 
 - name: "Get UUID for partition"
   become: true
-  command: blkid -s UUID -o value {{ ek_block_device }}
+  command: blkid -s UUID -o value {{ ek_fs_device }}
   register: ek_part_uuid
   changed_when: false
 
-- name: "Create mounting point {{ek_mount_path}}"
+- name: "Create mounting point {{ek_fs_mount_path}}"
   become: true
   file:
-    path: "{{ekara_fs_mount}}"
+    path: "{{ek_fs_mount_path}}"
     state: directory
     mode: 0777
 
-- name: "Mount {{ ek_block_device }} on {{ ek_mount_path }}"
+- name: "Mount {{ ek_fs_device }} on {{ ek_fs_mount_path }}"
   become: true
   mount:
-    path: "{{ ek_mount_path }}"
+    path: "{{ ek_fs_mount_path }}"
+    opts: "{{ ek_fs_mount_opts }}"
     fstype: "{{ ek_fs_type }}"
-    opts: "{{ ek_mount_opts }}"
     state: mounted
     src: 'UUID={{ ek_part_uuid.stdout }}'
