@@ -24,7 +24,6 @@
   file:
     path: "{{ek_fs_mount_path}}"
     state: directory
-    mode: 0777
 
 - name: "Mount {{ ek_fs_device }} on {{ ek_fs_mount_path }}"
   become: true
