@@ -35,6 +35,7 @@
     src: 'UUID={{ ek_part_uuid.stdout }}'
 
 - name: "Transfer ownership of mounting point {{ ek_fs_mount_path }} to {{ ek_fs_owner }}"
+  become: true
   when: ek_fs_owner is defined
   file:
     path: "{{ ek_fs_mount_path }}"
