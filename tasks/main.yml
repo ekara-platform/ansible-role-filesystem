@@ -33,3 +33,10 @@
     fstype: "{{ ek_fs_type }}"
     state: mounted
     src: 'UUID={{ ek_part_uuid.stdout }}'
+
+- name: "Transfer ownership of mounting point {{ ek_fs_mount_path }} to {{ ek_fs_owner }}"
+  when: ek_fs_owner is defined
+  file:
+    path: "{{ ek_fs_mount_path }}"
+    owner: "{{ ek_fs_owner }}"
+    state: directory
